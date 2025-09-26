@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column; /* Järjestää canvasin ja tekstin pystysuunnassa */
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+}
+canvas {
+    border: 1px solid #d3d3d3;
+    background-color: #f1f1f1;
+}
+.controls {
+    color: darkgray; /* Tummanharmaa teksti */
+    font-family: Arial, sans-serif;
+    margin-top: 10px; /* Väli canvasin ja tekstin välillä */
+    text-align: center;
+}
+</style>
+</head>
+<body onload="startGame()">
+    <div class="controls">
+        <p>Movement: WASD keys</p>
+        <p>Music: M</p>
+        <p>Restart: R</p>
+
+
+<audio id="myAudio">
+  //<source src="horse.ogg" type="audio/ogg">
+  <source src="Music.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+
+
+
+
+
+<script>
+//New music test
+var xx = document.getElementById("myAudio");
+document.getElementById("myAudio").loop = true; 
+
+
+function playAudio() { 
+  xx.play(); 
+} 
+function pauseAudio() { 
+  xx.pause(); 
+} 
+//function stopAudio() { 
+//  xx.stop();
+//}
+
+var myGamePiece;
+var elementWall;
+var tileWidth = 14;
+var tileHeight = 14;
+var objectTileX;
+var objectTileY;
+var Rocket = {};
+var tileX;
+var tileY;
+var maxSpeed = 2; //5
+var objectCount = 0;
+var rocketWidth = 12;
+var rocketHeight = 12;
+var inWater;
+var endPositionX;
+var endPositionY;
+var startPositionX;
+var startPositionY;
+
+var color = "white";
+
+inGroundElement = 0;
+
+var inLoading;
+
+var level;
+
+var list = [];
+
+
+//mapWidth = 49;
+//mapHeight = 24;
+
+var mapWidth = 49;
+var mapHeight = 24;
+
+
+
+var Map =[
+	[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+	[3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0,3,3,3,3,3,3,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,3,8,8,8,8,8,8,8,3,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,9,0,0,3,0,0,0,0,0,3,0,0,0,0,3,8,8,8,8,8,8,8,3,8,8,8,8,8,8,8,3,0,0,0,0,0,3,3,3,3,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,5,0,0,3,0,0,0,0,3,8,8,8,8,8,8,8,3,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,3,8,8,8,8,8,8,8,3,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,3,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,3,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,3,0,0,0,0,0,2,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,3,0,0,0,0,0,0,0,0,0,3],
+	[3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,6,6,6,6,6,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+	];
+
+var bacupMap = [[],[]];
+
+
+function createBackup() {
+	for (var y = 0; y < mapHeight + 1; y++) {
+		for (var x = 0; x < mapWidth + 1; x++) {
+			bacupMap[y][x] = Map[y][x];
+		}
+	}
+}
+
+//bacupMap = Map;
+
+function startGame() {
+    
+	//elementWall = new component(30, 30, "red", 10, 120);
+	
+	//var audio = new Audio('Music.mp3');
+	//audio.play();
+
+	
+
+    myGameArea.start();
+	CreateMap();
+	Objects();
+	
+	//myGamePiece = new component(rocketWidth, rocketHeight, "silver", tileWidth * 2, 120);
+	myGamePiece = new component(rocketWidth, rocketHeight, "silver", startPositionX * tileWidth, startPositionY * tileHeight);
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+		
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.interval = setInterval(updateGameArea, 10); //20
+		
+		this.canvas.width = 686;
+        this.canvas.height = 350;
+        this.context = this.canvas.getContext("2d");
+		
+		var canvas = document.createElement('canvas')
+    },
+    clear : function() {
+		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		CreateMap(); //need to put this to background layer and not clear it
+    }
+}
+
+function Objects() {
+	for (var y = 0; y < mapHeight + 1; y++) {
+		for (var x = 0; x < mapWidth + 1; x++) {
+			if (Map[y][x] == 5) {
+				objectCount += 1;
+			}
+		}
+	}
+}
+
+function CreateMap() {
+	for (var y = 0; y < mapHeight + 1; y++) {
+		for (var x = 0; x < mapWidth + 1; x++) {
+			
+			if (Map[y][x] == 3) {
+				ctx2 = myGameArea.context;
+				ctx2.fillStyle = "gray";
+				ctx2.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
+			}
+			if (Map[y][x] == 2) {
+				ctx2 = myGameArea.context;
+				ctx2.fillStyle = "#333300";
+				ctx2.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
+				endPositionX = x;
+				endPositionY = y;
+			}
+			if (Map[y][x] == 5) {
+				ctx2 = myGameArea.context;
+				ctx2.fillStyle = "red";
+				ctx2.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
+			}
+			if (Map[y][x] == 0) {
+				ctx2 = myGameArea.context;
+				ctx2.fillStyle = "Black";
+				ctx2.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
+			}
+			
+			if (Map[y][x] == 8) {
+				ctx = myGameArea.context;
+				ctx.fillStyle = "blue";
+				ctx.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight); //not ctx2 ???
+			}
+			
+			if (Map[y][x] == 4) {
+				ctx = myGameArea.context;
+				ctx.fillStyle = "yellow";
+				ctx.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight); //not ctx2 ???
+			}
+			
+			if (Map[y][x] == 9) {
+				ctx = myGameArea.context;
+				ctx.fillStyle = "White";
+				ctx.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight); //not ctx2 ???
+				startPositionX = x;
+				startPositionY = y;
+			}
+			if (Map[y][x] == 6) {
+				ctx = myGameArea.context;
+				ctx.fillStyle = "#88FF88";
+				ctx.fillRect(x * tileWidth, y * tileHeight, tileWidth, tileHeight); //not ctx2 ???
+			}
+
+		}
+	}
+}
+
+function component(width, height, color, x, y, tileX, tileY) {
+    this.width = width;
+    this.height = height;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.x = x;
+    this.y = y;
+	this.color = color;
+
+	this.sides = [x, x + width];
+    this.tops = [tileY, tileY + this.height];
+
+    this.leftSide = {
+      x: this.x,
+      y: this.sides
+    };
+
+    this.rightSide = {
+      x: this.x + this.width,
+      y: this.sides
+    };
+
+    this.topSide = {
+      x: this.tops,
+      y: this.y
+    };
+
+    this.bottomSide = {
+      x: this.tops,
+      y: this.y + this.height
+	};
+
+
+    this.update = function() {
+        ctx = myGameArea.context;
+        ctx.fillStyle = color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+    this.newPos = function() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+    }    
+
+}
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getCell(row, col) {
+  var r = Map[row];
+  if ( r === undefined ) {
+    console.error('Row not found', row, col);
+    return null;
+  }
+
+  var c = r[col];
+  if ( c === undefined ) {
+    console.error('Col not found', row, col);
+  }
+
+  return c;
+}
+
+function updateGameArea() {
+    myGameArea.clear();
+    myGamePiece.newPos();
+    myGamePiece.update();
+	
+	myGamePiece.speedY += 0.01; //0.035
+
+	if (myGamePiece.speedY < -maxSpeed) {
+		myGamePiece.speedY = -maxSpeed
+	}
+	if (myGamePiece.speedX < -maxSpeed) {
+		myGamePiece.speedX = -maxSpeed
+	}
+	if (myGamePiece.speedY > maxSpeed) {
+		myGamePiece.speedY = maxSpeed
+	}
+	if (myGamePiece.speedX > maxSpeed) {
+		myGamePiece.speedX = maxSpeed
+	}
+	
+	tileX = Math.round(this.x / 14);
+	tileY = Math.round(this.y / 14);
+
+
+	//Water
+	if ( Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 8) {
+		myGamePiece.speedY -= 0.02;
+		
+		if (inWater != 1 && myGamePiece.speedY > 0.2) {
+			var audio = new Audio('Water.mp3');
+			maxSpeed = 1;
+		audio.play();
+		}
+		inWater = 1;
+	}
+	if (inWater == 1 && Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 0) {
+		
+			myGamePiece.speedY = myGamePiece.speedY / 2.5;
+			myGamePiece.speedX = myGamePiece.speedX / 2.5;
+		
+		
+		maxSpeed = 2;
+		inWater = 0;
+	}
+
+	//Safe
+	if ( Map[Math.floor((myGamePiece.y + rocketHeight) / 14)][Math.floor(myGamePiece.x / 14)] == 6 && Map[Math.floor((myGamePiece.y + rocketHeight) / 14)][Math.floor((myGamePiece.x + rocketWidth) / 14)] == 6) {
+
+		if (myGamePiece.speedY > 1 || myGamePiece.speedX > 1) {
+        var audio = new Audio('Explosion.mp3');
+        xx.pause(); // Korjaa: Lisää sulut
+        xx.currentTime = 0; // Nollaa audion alkuun
+        audio.play();
+        clearInterval(myGameArea.interval);
+    
+
+		}
+		else {
+			if (inLoading != 1 && myGamePiece.speedY > 0.2) {
+			var audio = new Audio('LoadingPoint.mp3');
+			
+			audio.play();
+			}
+			inLoading = 1;
+
+			myGamePiece.speedY = 0;
+			myGamePiece.speedX = 0;
+
+			if (objectCount < 1) {
+			Map[endPositionY][endPositionX] = 4;
+			}
+
+		}
+
+	}
+	else {
+		inLoading = 0;
+	}
+
+
+
+
+	//Collide
+	//if ( Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 3) {
+
+	function checkCollision() {
+
+		if (inGroundElement == 1) { inGroundElement = 0; return; }
+		let hitDetected = 0;
+
+
+		//Right side
+		if (Map[Math.floor(myGamePiece.y / 14)][Math.floor((myGamePiece.x + rocketWidth) / 14)] == 3 && Map[Math.floor((myGamePiece.y + rocketWidth) / 14)][Math.floor((myGamePiece.x + rocketWidth) / 14)] == 3) {
+			myGamePiece.speedX = -myGamePiece.speedX
+			hitDetected = 1;
+		}
+		//TopRight
+		else if (Map[Math.floor(myGamePiece.y / 14)][Math.floor((myGamePiece.x + rocketWidth) / 14)] == 3) {
+			myGamePiece.speedX = -myGamePiece.speedX
+			myGamePiece.speedY = -myGamePiece.speedY
+			hitDetected = 1;
+		}
+		
+		//BottomRight
+		else if (Map[Math.floor((myGamePiece.y + rocketWidth) / 14)][Math.floor((myGamePiece.x + rocketWidth) / 14)] == 3) {
+			myGamePiece.speedX = -myGamePiece.speedX
+			myGamePiece.speedY = -myGamePiece.speedY
+			hitDetected = 1;
+		}
+
+		
+		//Left side
+		if (Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 3 && Map[Math.floor((myGamePiece.y + rocketWidth) / 14)][Math.floor(myGamePiece.x / 14)] == 3) {
+			myGamePiece.speedX = -myGamePiece.speedX
+			hitDetected = 1;
+		}
+		//TopLeft
+		else if (Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 3) {
+			myGamePiece.speedX = -myGamePiece.speedX
+			myGamePiece.speedY = -myGamePiece.speedY
+			hitDetected = 1;
+		}
+
+		//BottomLeft
+		else if (Map[Math.floor((myGamePiece.y + rocketWidth) / 14)][Math.floor(myGamePiece.x / 14)] == 3) {
+			myGamePiece.speedX = -myGamePiece.speedX
+			myGamePiece.speedY = -myGamePiece.speedY
+			hitDetected = 1;
+		}
+
+		
+
+		//Bottom side
+		if (Map[Math.floor((myGamePiece.y + rocketWidth) / 14)][Math.floor((myGamePiece.x + rocketWidth) / 14)] == 3 && Map[Math.floor((myGamePiece.y + rocketWidth) / 14)][Math.floor(myGamePiece.x / 14)] == 3) {
+			//myGamePiece.speedX = -myGamePiece.speedX
+			myGamePiece.speedY = -myGamePiece.speedY / 1.5
+			hitDetected = 1;
+		}
+
+		//Top side
+		if (Map[Math.floor(myGamePiece.y / 14)][Math.floor((myGamePiece.x + rocketWidth) / 14)] == 3 && Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 3) {
+			//myGamePiece.speedX = -myGamePiece.speedX
+			myGamePiece.speedY = -myGamePiece.speedY
+			hitDetected = 1;
+		}
+
+		if (hitDetected == 1){
+			var audio = new Audio('Crash.mp3');
+		    audio.play();
+			inGroundElement = 1;
+		}
+	}
+
+	checkCollision();
+
+	
+	//Object
+	if ( Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 5) {
+		Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] = 0;
+		objectCount -= 1;
+
+		var audio = new Audio('Object.mp3');
+			audio.play();
+		}
+	
+	//Finish level
+	if ( Map[Math.floor(myGamePiece.y / 14)][Math.floor(myGamePiece.x / 14)] == 4) {
+		var audio = new Audio('Stage completed.mp3');
+		xx.pause;
+		myAudio.src = myAudio.src;
+		audio.play();
+		
+		clearInterval(myGameArea.interval);
+		}
+
+	document.onkeydown = checkKey;
+
+function ReadFile1() {
+
+	let input = document.querySelector('input');
+	let textarea = document.querySelector('textarea');
+
+	input.addEventListener('change', () => {
+    let files = input.files;
+ 
+    if(files.length == 0) return;
+ 
+    const file = files[0];
+ 
+    let reader = new FileReader();
+ 
+    reader.onload = (e) => {
+        const file = e.target.result;
+        const lines = file.split(/\r\n|\n/);
+        textarea.value = lines.join('\n');
+
+    };
+
+    reader.onerror = (e) => alert(e.target.error.name);
+    reader.readAsText(file); 
+
+	});
+
+	}
+
+
+
+	function checkKey(e) {
+
+		e = e || window.event;
+
+		if (e.keyCode == '87') { //38
+			// up arrow
+			
+			moveup();
+		}
+		else if (e.keyCode == '83') { //40
+			// down arrow
+			movedown();
+		}
+		else if (e.keyCode == '65') { //37
+		// left arrow
+		moveleft();
+		}
+		else if (e.keyCode == '68') { //39
+		// right arrow
+		moveright();
+		}
+		else if (e.keyCode == '82') { //39
+		// restart game
+		clearInterval(myGameArea.interval);
+		restart();
+		}
+		else if (e.keyCode == '81') { //mapfromfile
+		ReadFile();
+		}
+
+		else if (e.keyCode == '77') { //39
+		//music
+		playAudio();
+
+		}
+	}
+
+}
+
+function moveup() {
+    myGamePiece.speedY -= maxSpeed / 25; //0.2; 
+}
+
+function movedown() {
+    myGamePiece.speedY += maxSpeed / 20;//0.5; 
+}
+
+function moveleft() {
+    myGamePiece.speedX -= maxSpeed / 10;//0.5; 
+}
+
+function moveright() {
+    myGamePiece.speedX += maxSpeed / 10;//0.5; 
+}
+
+function restart() {
+	//myGamePiece.speedY = -5
+	//myGamePiece.speedX = 5
+	//Map = backupMap;
+	objectCount = 0;
+	CreateMap();
+    startGame(); 
+	
+
+	
+}
+
+
+</script>
+
+</body>
+</html>
